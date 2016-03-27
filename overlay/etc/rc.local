@@ -1,0 +1,30 @@
+#!/bin/bash
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+if [ ! -f /etc/scw-int-done-setup ]; then
+    SCWIP=$(hostname  -I | awk '{print $1}')
+    SCWPUBLIC=$(curl http://v4.myip.ninja)
+    METADATA=`curl http://169.254.42.42/conf`
+    MODEL=$(echo "$METADATA" | egrep COMMERCIAL_TYPE= | sed 's/COMMERCIAL_TYPE=//g')
+    CLUSTERID=$(echo "$METADATA" | egrep TAGS_0= | sed 's/TAGS_0=cluster://g')
+    echo "COREOS_PRIVATE_IPV4="$SCWIP >>/etc/environment
+    echo "COREOS_PUBLIC_IPV4="$SCWPUBLIC >>/etc/environment
+    echo "MODEL="$MODEL >>/etc/environment
+    mkdir -p /etc/pulcy
+    echo $CLUSTERID >>/etc/pulcy/cluster-id
+    chmod 0400 /etc/pulcy/cluster-id
+    touch /etc/scw-int-done-setup
+    reboot
+fi
+
+exit 0
